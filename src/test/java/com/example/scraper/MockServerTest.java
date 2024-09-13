@@ -7,17 +7,23 @@ import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MockServerTest {
 
     private MockWebServer mockWebServer;
+    private RestTemplate restTemplate;
 
     @BeforeEach
     void setUp() throws IOException {
         mockWebServer = new MockWebServer();
         mockWebServer.start();
+        restTemplate = new RestTemplate();  // Initialize RestTemplate
     }
 
     @AfterEach
@@ -31,9 +37,11 @@ public class MockServerTest {
                 .setBody("{\"title\":\"My title\"}")
                 .addHeader("Content-Type", "application/json"));
 
-        JsonScraper jsonScraper = new JsonScraper();
+        JsonScraper jsonScraper = new JsonScraper(restTemplate);
         String baseUrl = mockWebServer.url("/entity-slug-uuid.json").toString();
-        jsonScraper.scrape(baseUrl);
+        String result = jsonScraper.scrape(baseUrl);
+
+        assertTrue(result.contains("My title"));
     }
 
     @Test
@@ -44,7 +52,9 @@ public class MockServerTest {
 
         HtmlScraper htmlScraper = new HtmlScraper();
         String baseUrl = mockWebServer.url("/product-slug.html").toString();
-        htmlScraper.scrape(baseUrl);
+        String result = htmlScraper.scrape(baseUrl);
+
+        assertEquals("ProductData{id='1234', title='Product Title'}", result);
     }
 
     @Test
@@ -53,11 +63,11 @@ public class MockServerTest {
                 .setBody("{invalid-json}")
                 .addHeader("Content-Type", "application/json"));
 
-        JsonScraper jsonScraper = new JsonScraper();
+        JsonScraper jsonScraper = new JsonScraper(restTemplate);
         String baseUrl = mockWebServer.url("/entity-slug-uuid.json").toString();
-        jsonScraper.scrape(baseUrl);  // This should now handle or log the error gracefully.
+        String result = jsonScraper.scrape(baseUrl);
+        assertTrue(result.contains("Failed to parse JSON response"));
     }
-
 
     @Test
     void testHtmlScraperWithMissingTitleElement() throws Exception {
@@ -67,7 +77,9 @@ public class MockServerTest {
 
         HtmlScraper htmlScraper = new HtmlScraper();
         String baseUrl = mockWebServer.url("/product-slug.html").toString();
-        htmlScraper.scrape(baseUrl);  // Should handle missing elements gracefully.
+        String result = htmlScraper.scrape(baseUrl);
+
+        assertEquals("Product title element not found in the HTML.", result);
     }
 
     @Test
@@ -76,9 +88,10 @@ public class MockServerTest {
                 .setResponseCode(404)
                 .setBody("Not Found"));
 
-        JsonScraper jsonScraper = new JsonScraper();
+        JsonScraper jsonScraper = new JsonScraper(restTemplate);
         String baseUrl = mockWebServer.url("/entity-slug-uuid.json").toString();
-        jsonScraper.scrape(baseUrl);  // Should handle 404 error gracefully.
+        String result = jsonScraper.scrape(baseUrl);
+        assertTrue(result.contains("Failed to parse JSON response"));
     }
 
     @Test
@@ -89,7 +102,8 @@ public class MockServerTest {
 
         HtmlScraper htmlScraper = new HtmlScraper();
         String baseUrl = mockWebServer.url("/product-slug.html").toString();
-        htmlScraper.scrape(baseUrl);  // Should handle 500 error gracefully.
+        String result = htmlScraper.scrape(baseUrl);
+        assertTrue(result.contains("Error while fetching HTML content from URL"));
     }
 
     @Test
@@ -99,9 +113,10 @@ public class MockServerTest {
                 .setHeader("Content-Type", "application/json")
                 .setBodyDelay(3, java.util.concurrent.TimeUnit.SECONDS));  // Simulate a delay
 
-        JsonScraper jsonScraper = new JsonScraper();
+        JsonScraper jsonScraper = new JsonScraper(restTemplate);
         String baseUrl = mockWebServer.url("/entity-slug-uuid.json").toString();
-        jsonScraper.scrape(baseUrl);  // Should handle timeout if configured.
+        String result = jsonScraper.scrape(baseUrl);
+        assertTrue(result.contains("Delayed Response"));
     }
 
     @Test
@@ -112,11 +127,12 @@ public class MockServerTest {
                     .addHeader("Content-Type", "application/json"));
         }
 
-        JsonScraper jsonScraper = new JsonScraper();
+        JsonScraper jsonScraper = new JsonScraper(restTemplate);
         String baseUrl = mockWebServer.url("/entity-slug-uuid.json").toString();
 
         for (int i = 0; i < 15; i++) {
-            jsonScraper.scrape(baseUrl);  // Should respect rate-limiting settings.
+            String result = jsonScraper.scrape(baseUrl);
+            assertTrue(result.contains("Response " + i));
         }
     }
 }
