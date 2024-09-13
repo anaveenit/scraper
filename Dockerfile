@@ -11,14 +11,17 @@ COPY src ./src
 # Package the application into a jar file using Maven
 RUN mvn clean package -DskipTests
 
+# Verify if the JAR file exists after the build
+RUN ls -l /app/target  # List the contents of the target directory for debugging
+
 # Use an OpenJDK runtime image to run the Spring Boot application
 FROM openjdk:17-jdk-alpine
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the jar file from the build stage to the runtime image
-COPY --from=build /app/target/*.jar app.jar  # Changed to use wildcard to pick up any generated JAR
+# Ensure the target directory contains the generated JAR file
+COPY --from=build /app/target/*.jar app.jar
 
 # Expose port 8080 to the outside world
 EXPOSE 8080
