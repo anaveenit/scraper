@@ -1,7 +1,10 @@
 package com.example.scraper.service;
 
+import com.example.scraper.config.RateLimiterConfig;
 import com.example.scraper.mapper.HtmlUtil;
 import com.example.scraper.model.ProductData;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -9,13 +12,21 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 
+
 @Service
 public class HtmlScraper implements Scraper {
+
+    private static final Logger log = LogManager.getLogger(HtmlScraper.class);
 
     @Override
     public String scrape(String url) {
         if (url == null || url.isEmpty()) {
             throw new IllegalArgumentException("URL must not be null or empty");
+        }
+
+        // Rate limiting: Check if a token is available
+        if (!RateLimiterConfig.tryConsumeToken()) {
+            throw new RuntimeException("Rate limit exceeded. Try again later.");
         }
 
         try {
@@ -28,18 +39,19 @@ public class HtmlScraper implements Scraper {
 
                 ProductData product = new ProductData(id, title);
                 String result = product.toString();
-                System.out.println("Scraped Product Data: " + product);
+                HtmlScraper.log.error("Scraped Product Data: {}", product);
                 return result;
 
             } else {
-                System.err.println("Error: Product title element not found in the HTML.");
+                log.error("Error: Product title element not found in the HTML.");
                 return "Product title element not found in the HTML.";
             }
         } catch (IOException e) {
-            System.err.println("Error while fetching HTML content from URL: " + url + " - " + e.getMessage());
+            log.error("Error while fetching HTML content from URL: {} - {}", url, e.getMessage());
             return "Error while fetching HTML content from URL";
         } catch (Exception e) {
-            return "Error while fetching HTML content from URL..";
+            log.error("Exception in HtmlScraper{}", e.getMessage());
+            return "Exception in HtmlScraper";
         }
     }
 }

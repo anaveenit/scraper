@@ -1,5 +1,6 @@
 package com.example.scraper.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -8,14 +9,13 @@ import java.util.List;
 public class WebScraperService {
     private final ScraperFactory scraperFactory;
 
+    @Autowired
     public WebScraperService(ScraperFactory scraperFactory) {
         this.scraperFactory = scraperFactory;
     }
 
-    public void scrapeUrls(List<String> urls) {
-        urls.forEach(url -> {
-            Scraper scraper = scraperFactory.getScraper(url);
-            scraper.scrape(url);
-        });
+    public String scrape(String url) {
+        Scraper scraper = scraperFactory.getScraper(url);  // Use ScraperFactory to get the appropriate scraper
+        return scraper.scrape(url);
     }
 }

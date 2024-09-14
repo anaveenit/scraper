@@ -37,7 +37,7 @@
 		<dependency>
 			<groupId>org.jsoup</groupId>
 			<artifactId>jsoup</artifactId>
-			<version>1.14.3</version>
+			<version>1.15.3</version>
 		</dependency>
 
 		<!-- Resilience4j for rate limiting, retry, etc. -->
@@ -46,6 +46,7 @@
 			<artifactId>resilience4j-spring-boot2</artifactId>
 			<version>1.7.0</version>
 		</dependency>
+
 
 		<!-- JUnit 5 for unit testing -->
 		<dependency>

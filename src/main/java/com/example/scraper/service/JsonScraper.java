@@ -1,20 +1,20 @@
 package com.example.scraper.service;
 
 
+import com.example.scraper.config.RateLimiterConfig;
 import com.example.scraper.mapper.JsonUtil;
 import com.example.scraper.model.EntityData;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 @Service
 public class JsonScraper implements Scraper {
 
 
+    private static final Logger log = LogManager.getLogger(JsonScraper.class);
     private final RestTemplate restTemplate;
 
     // Constructor injection
@@ -26,6 +26,10 @@ public class JsonScraper implements Scraper {
         if (url == null || url.isEmpty()) {
             throw new IllegalArgumentException("URL must not be null or empty");
         }
+        // Rate limiting: Check if a token is available
+        if (!RateLimiterConfig.tryConsumeToken()) {
+            throw new RuntimeException("Rate limit exceeded. Try again later.");
+        }
         try {
             // Perform an HTTP GET request to the provided URL
             String jsonResponse = restTemplate.getForObject(url, String.class);
@@ -36,11 +40,11 @@ public class JsonScraper implements Scraper {
 
         } catch (JsonProcessingException e) {
             // Handle invalid JSON gracefully
-            System.err.println("Failed to parse JSON response: " + e.getMessage());
+            log.error("Failed to parse JSON response: {}", e.getMessage());
             return "Failed to parse JSON response";
         } catch (Exception e) {
             // Handle other exceptions (e.g., network issues)
-            System.err.println("An error occurred during scraping: " + e.getMessage());
+            log.error("An error occurred during scraping: {}", e.getMessage());
             return "Failed to parse JSON response";
         }
     }
