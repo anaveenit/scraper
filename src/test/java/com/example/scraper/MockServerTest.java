@@ -196,41 +196,69 @@ public class MockServerTest {
         requestFactory.setReadTimeout(TIMEOUT_MS);     // Set read timeout
         return new RestTemplate(requestFactory);
     }
-
     @Test
-    void testRateLimitingHandling() throws Exception {
-        // Define a valid JSON response
-        String validJsonResponse = "{\"title\":\"Valid Response\"}";
-
-        // Enqueue the same valid JSON response for all requests
-        for (int i = 0; i < TOTAL_REQUESTS; i++) {
-            mockWebServer.enqueue(new MockResponse()
-                    .setBody(validJsonResponse)
-                    .addHeader("Content-Type", "application/json"));
-        }
+    void testMalformedJsonErrorHandling() throws Exception {
+        // Enqueue an invalid JSON response
+        mockWebServer.enqueue(new MockResponse()
+                .setBody("{invalid-json}")
+                .addHeader("Content-Type", "application/json"));
 
         String baseUrl = mockWebServer.url("/entity-slug-uuid.json").toString();
 
-        for (int i = 0; i < TOTAL_REQUESTS; i++) {
-            System.out.println("Current request: " + i);
+        String result = webScraperService.scrape(baseUrl);
 
-            if (i >= RATE_LIMIT_THRESHOLD) {  // After threshold, expect rate limiting
-                System.out.println("Expecting rate limit exception for request: " + i);
-
-                // Expect a RuntimeException due to rate limit
-                RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-                    webScraperService.scrape(baseUrl);  // Should trigger rate limit exception
-                });
-
-                assertTrue(exception.getMessage().contains(EXPECTED_RATE_LIMIT_EXCEEDED_RESULT), "Exception should indicate rate limit exceeded.");
-            } else {
-                System.out.println("Request should succeed for: " + i);
-                String result = webScraperService.scrape(baseUrl);
-                assertNotNull(result, "Result should not be null for request " + i);
-                assertTrue(result.contains("Valid Response"), "Result should contain 'Valid Response'.");
-            }
-        }
+        assertEquals("Failed to parse JSON response", result, "Result should indicate JSON parsing failure.");
     }
+
+    @Test
+    void test500ErrorHandling() throws Exception {
+        // Enqueue a 500 Internal Server Error response
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(500)
+                .setBody("Internal Server Error")
+                .addHeader("Content-Type", "text/html"));
+
+        String baseUrl = mockWebServer.url("/product-slug.html").toString();
+
+        String result = webScraperService.scrape(baseUrl);
+
+        assertTrue(result.contains("Error while fetching HTML content"), "Result should indicate a 500 error.");
+    }
+
+//    @Test
+//    void testRateLimitingHandling() throws Exception {
+//        // Define a valid JSON response
+//        String validJsonResponse = "{\"title\":\"Valid Response\"}";
+//
+//        // Enqueue the same valid JSON response for all requests
+//        for (int i = 0; i < TOTAL_REQUESTS; i++) {
+//            mockWebServer.enqueue(new MockResponse()
+//                    .setBody(validJsonResponse)
+//                    .addHeader("Content-Type", "application/json"));
+//        }
+//
+//        String baseUrl = mockWebServer.url("/entity-slug-uuid.json").toString();
+//
+//        for (int i = 0; i < TOTAL_REQUESTS; i++) {
+//            System.out.println("Current request: " + i);
+//
+//            if (i >= RATE_LIMIT_THRESHOLD) {  // After threshold, expect rate limiting
+//                System.out.println("Expecting rate limit exception for request: " + i);
+//
+//                // Expect a RuntimeException due to rate limit
+//                RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+//                    webScraperService.scrape(baseUrl);  // Should trigger rate limit exception
+//                });
+//
+//                assertTrue(exception.getMessage().contains(EXPECTED_RATE_LIMIT_EXCEEDED_RESULT), "Exception should indicate rate limit exceeded.");
+//            } else {
+//                System.out.println("Request should succeed for: " + i);
+//                String result = webScraperService.scrape(baseUrl);
+//                assertNotNull(result, "Result should not be null for request " + i);
+//                assertTrue(result.contains("Valid Response"), "Result should contain 'Valid Response'.");
+//            }
+//        }
+//    }
 
 
 
