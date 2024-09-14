@@ -199,20 +199,34 @@ public class MockServerTest {
 
     @Test
     void testRateLimitingHandling() throws Exception {
-        // Enqueue mock responses for all requests
+        // Define valid JSON and HTML responses
+        String validJsonResponse = "{\"title\":\"Valid Response\"}";
+        String validHtmlResponse = "<html><body><h1 class='product-title' data-id='1234'>Valid HTML Title</h1></body></html>";
+
+        // Enqueue valid JSON and HTML mock responses alternately for all requests
         for (int i = 0; i < TOTAL_REQUESTS; i++) {
-            mockWebServer.enqueue(new MockResponse()
-                    .setBody("{\"title\":\"Response " + i + "\"}")
-                    .addHeader("Content-Type", "application/json"));
+            if (i % 2 == 0) {  // Even index: JSON response
+                mockWebServer.enqueue(new MockResponse()
+                        .setBody(validJsonResponse)
+                        .addHeader("Content-Type", "application/json"));
+            } else {  // Odd index: HTML response
+                mockWebServer.enqueue(new MockResponse()
+                        .setBody(validHtmlResponse)
+                        .addHeader("Content-Type", "text/html"));
+            }
         }
 
-        String baseUrl = mockWebServer.url(JSON_URL).toString();
+        String jsonBaseUrl = mockWebServer.url(JSON_URL).toString();
+        String htmlBaseUrl = mockWebServer.url(HTML_URL).toString();
 
         for (int i = 0; i < TOTAL_REQUESTS; i++) {
+            // Use JSON URL for even requests and HTML URL for odd requests
+            String baseUrl = (i % 2 == 0) ? jsonBaseUrl : htmlBaseUrl;
+
             // Log the current request number for debugging
             System.out.println("Current request: " + i);
 
-            if (i > RATE_LIMIT_THRESHOLD) {  // After 10 requests, rate limiting should kick in
+            if (i >= RATE_LIMIT_THRESHOLD) {  // After 10 requests, rate limiting should kick in
                 // Log before expecting an exception
                 System.out.println("Expecting rate limit exception for request: " + i);
 
@@ -226,11 +240,19 @@ public class MockServerTest {
                 // Log that the request is expected to succeed
                 System.out.println("Request should succeed for: " + i);
 
+                // Act
                 String result = webScraperService.scrape(baseUrl);
+
+                // Assert
                 assertNotNull(result, "Result should not be null for request " + i);
-                assertTrue(result.contains("Response " + i), "Result should contain 'Response " + i + "'");
+                if (i % 2 == 0) {
+                    assertTrue(result.contains("Valid Response"), "Result should contain 'Valid Response' for JSON response.");
+                } else {
+                    assertTrue(result.contains("Valid HTML Title"), "Result should contain 'Valid HTML Title' for HTML response.");
+                }
             }
         }
     }
+
 
 }

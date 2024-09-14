@@ -44,7 +44,7 @@ public class JsonScraper implements Scraper {
             return "Failed to parse JSON response";
         } catch (Exception e) {
             // Handle other exceptions (e.g., network issues)
-            log.error("An error occurred during scraping: {}", e.getMessage());
+            log.error("An error occurred during scraping: {},{}", e.getMessage(),url);
             return "Failed to parse JSON response";
         }
     }
