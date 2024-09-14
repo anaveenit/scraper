@@ -209,6 +209,7 @@ public class MockServerTest {
 
         for (int i = 0; i < TOTAL_REQUESTS; i++) {
             if (i >= RATE_LIMIT_THRESHOLD) {  // After 10 requests, rate limiting should kick in
+                log.info("Current: {}", i);
                 Exception exception = assertThrows(RuntimeException.class, () -> {
                     webScraperService.scrape(baseUrl);
                 });
