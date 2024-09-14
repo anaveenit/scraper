@@ -1,6 +1,7 @@
 package com.example.scraper.config;
 
 
+
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
@@ -23,10 +24,18 @@ public class RateLimiterConfig {
     }
 
     public static boolean tryConsumeToken() {
-        return bucket.tryConsume(1);  // Try to consume 1 token; returns false if the bucket is empty
+        System.out.println("Available tokens before consuming: " + bucket.getAvailableTokens());
+        boolean consumed = bucket.tryConsume(1);  // Try to consume 1 token
+        if (!consumed) {
+            System.out.println("Rate limit exceeded! No more tokens available.");
+        } else {
+            System.out.println("Token consumed. Remaining tokens: " + bucket.getAvailableTokens());
+        }
+        return consumed;
     }
 
     public static void resetBucket() {
+        System.out.println("Resetting rate limiter bucket.");
         bucket = createBucket();  // Reset the bucket
     }
 }
