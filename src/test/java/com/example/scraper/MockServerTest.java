@@ -212,7 +212,7 @@ public class MockServerTest {
             // Log the current request number for debugging
             System.out.println("Current request: " + i);
 
-            if (i >= RATE_LIMIT_THRESHOLD) {  // After 10 requests, rate limiting should kick in
+            if (i > RATE_LIMIT_THRESHOLD) {  // After 10 requests, rate limiting should kick in
                 // Log before expecting an exception
                 System.out.println("Expecting rate limit exception for request: " + i);
 
