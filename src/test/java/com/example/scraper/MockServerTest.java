@@ -199,6 +199,7 @@ public class MockServerTest {
 
     @Test
     void testRateLimitingHandling() throws Exception {
+        // Enqueue mock responses for all requests
         for (int i = 0; i < TOTAL_REQUESTS; i++) {
             mockWebServer.enqueue(new MockResponse()
                     .setBody("{\"title\":\"Response " + i + "\"}")
@@ -208,17 +209,28 @@ public class MockServerTest {
         String baseUrl = mockWebServer.url(JSON_URL).toString();
 
         for (int i = 0; i < TOTAL_REQUESTS; i++) {
+            // Log the current request number for debugging
+            System.out.println("Current request: " + i);
+
             if (i >= RATE_LIMIT_THRESHOLD) {  // After 10 requests, rate limiting should kick in
-                log.info("Current: {}", i);
-                Exception exception = assertThrows(RuntimeException.class, () -> {
-                    webScraperService.scrape(baseUrl);
+                // Log before expecting an exception
+                System.out.println("Expecting rate limit exception for request: " + i);
+
+                RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+                    webScraperService.scrape(baseUrl);  // This call should trigger rate limit exception
                 });
+
+                // Assert that the exception message contains "Rate limit exceeded"
                 assertTrue(exception.getMessage().contains(EXPECTED_RATE_LIMIT_EXCEEDED_RESULT), "Exception should indicate rate limit exceeded.");
             } else {
+                // Log that the request is expected to succeed
+                System.out.println("Request should succeed for: " + i);
+
                 String result = webScraperService.scrape(baseUrl);
                 assertNotNull(result, "Result should not be null for request " + i);
                 assertTrue(result.contains("Response " + i), "Result should contain 'Response " + i + "'");
             }
         }
     }
+
 }
