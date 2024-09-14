@@ -42,7 +42,7 @@ public class MockServerTest {
     private static final String EXPECTED_NOT_FOUND_RESULT = "Failed to parse JSON response";
     private static final String EXPECTED_SERVER_ERROR_RESULT = "Error while fetching HTML content from URL";
     private static final String EXPECTED_TIMEOUT_RESULT = "Failed to parse JSON response";
-    private static final String EXPECTED_RATE_LIMIT_EXCEEDED_RESULT = "Rate limit exceeded";
+    private static final String EXPECTED_RATE_LIMIT_EXCEEDED_RESULT = "Rate limit exceeded. Try again later.";
 
     // Constants for Test Setup
     private static final int RATE_LIMIT_THRESHOLD = 10; // Threshold for rate limiting
