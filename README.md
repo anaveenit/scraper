@@ -45,7 +45,7 @@ cd web-scraper
 mvn clean install
 This command will compile the project, run all tests, and package the application into a JAR file located in the target directory.
 
-# Running the Application
+# Running the Application (Optional)
 
 Run the Application Locally
    To run the application locally, execute the following command:
