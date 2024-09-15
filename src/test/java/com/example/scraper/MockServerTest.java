@@ -237,12 +237,16 @@ public class MockServerTest {
                     .addHeader("Content-Type", "application/json"));
         }
 
+        // Set the base URL to the MockWebServer
         String baseUrl = mockWebServer.url("/entity-slug-uuid.json").toString();
+
+        // Reset the rate limiter before running the test
+        RateLimiterConfig.resetBucket();
 
         for (int i = 0; i < TOTAL_REQUESTS; i++) {
             System.out.println("Current request: " + i);
 
-            if (i >= RATE_LIMIT_THRESHOLD) {  // After threshold, expect rate limiting
+            if (i >= RATE_LIMIT_THRESHOLD) {  // After reaching the rate limit threshold, expect rate limiting
                 System.out.println("Expecting rate limit exception for request: " + i);
 
                 // Expect a RuntimeException due to rate limit
@@ -250,7 +254,7 @@ public class MockServerTest {
                     webScraperService.scrape(baseUrl);  // Should trigger rate limit exception
                 });
 
-                assertTrue(exception.getMessage().contains(EXPECTED_RATE_LIMIT_EXCEEDED_RESULT), "Exception should indicate rate limit exceeded.");
+                assertTrue(exception.getMessage().contains("Rate limit exceeded"), "Exception should indicate rate limit exceeded.");
             } else {
                 System.out.println("Request should succeed for: " + i);
                 String result = webScraperService.scrape(baseUrl);
